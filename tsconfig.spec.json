@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Tests are never emitted to disk, so declarations/rootDir constraints that
+    // apply to the production build are irrelevant here. Setting them explicitly
+    // avoids TS6's "rootDir must be explicitly set" check under ts-jest.
+    "declaration": false,
+    "rootDir": ".",
+    "isolatedModules": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    // `baseUrl` + `node` resolution remain the NestJS/tsc-alias ecosystem
+    // convention. They are deprecated (not removed) in TS 6; this sanctioned
+    // flag keeps them working across the whole 6.x line. Migrating to a modern
+    // resolution is a documented one-time task to schedule when adopting TS 7.
+    "ignoreDeprecations": "6.0",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+
+    /* Strict type-checking (correctness first) */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    /*
+     * exactOptionalPropertyTypes is intentionally left OFF: it fights common
+     * DTO/config patterns (optional props assigned `undefined`) across Nest,
+     * Swagger and class-transformer without buying proportional safety.
+     */
+
+    "paths": {
+      "@app/*": ["src/*"],
+      "@config/*": ["src/config/*"],
+      "@common/*": ["src/common/*"],
+      "@infra/*": ["src/infra/*"],
+      "@modules/*": ["src/modules/*"],
+      "@logger/*": ["src/logger/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
