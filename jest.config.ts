@@ -26,6 +26,7 @@ const config: Config = {
     '^@infra/(.*)$': '<rootDir>/src/infra/$1',
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',
     '^@logger/(.*)$': '<rootDir>/src/logger/$1',
+    '^@security/(.*)$': '<rootDir>/src/security/$1',
   },
   collectCoverageFrom: ['**/*.(t|j)s', '!**/*.module.ts', '!**/main.ts'],
   coverageDirectory: '<rootDir>/coverage',

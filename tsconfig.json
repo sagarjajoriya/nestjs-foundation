@@ -46,7 +46,8 @@
       "@common/*": ["src/common/*"],
       "@infra/*": ["src/infra/*"],
       "@modules/*": ["src/modules/*"],
-      "@logger/*": ["src/logger/*"]
+      "@logger/*": ["src/logger/*"],
+      "@security/*": ["src/security/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

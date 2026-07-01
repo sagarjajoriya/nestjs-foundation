@@ -13,6 +13,7 @@
     "^@common/(.*)$": "<rootDir>/src/common/$1",
     "^@infra/(.*)$": "<rootDir>/src/infra/$1",
     "^@modules/(.*)$": "<rootDir>/src/modules/$1",
-    "^@logger/(.*)$": "<rootDir>/src/logger/$1"
+    "^@logger/(.*)$": "<rootDir>/src/logger/$1",
+    "^@security/(.*)$": "<rootDir>/src/security/$1"
   }
 }

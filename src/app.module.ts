@@ -10,6 +10,8 @@ import { PrismaModule } from '@infra/prisma/prisma.module';
 import { LoggerModule } from '@logger/logger.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { HealthModule } from '@modules/health/health.module';
+import { UsersModule } from '@modules/users/users.module';
+import { SecurityModule } from '@security/security.module';
 
 /**
  * Root application module.
@@ -24,6 +26,7 @@ import { HealthModule } from '@modules/health/health.module';
     AppConfigModule,
     LoggerModule,
     PrismaModule,
+    SecurityModule,
 
     // Global rate limiting with sensible, un-fussy defaults.
     ThrottlerModule.forRootAsync({
@@ -40,6 +43,7 @@ import { HealthModule } from '@modules/health/health.module';
 
     // Feature modules.
     HealthModule,
+    UsersModule,
     AuthModule,
   ],
   providers: [
