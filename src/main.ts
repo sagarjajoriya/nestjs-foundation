@@ -3,6 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 
@@ -24,6 +25,9 @@ async function bootstrap(): Promise<void> {
 
   // --- Security headers ---
   app.use(helmet());
+
+  // --- Cookie parsing (refresh-token + CSRF cookies for the auth module) ---
+  app.use(cookieParser());
 
   // --- CORS (env-driven allowlist; never `*` when credentials are enabled) ---
   app.enableCors({

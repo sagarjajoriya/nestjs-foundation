@@ -13,7 +13,10 @@ import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
-import { UsersRepository } from './users.repository';
+import { UsersRepository, UserWithRoles } from './users.repository';
+
+/** Role automatically granted to self-registered users. */
+export const DEFAULT_USER_ROLE = 'USER';
 
 /**
  * User business logic. Controllers stay thin; all rules (uniqueness, hashing,
@@ -135,6 +138,72 @@ export class UsersService {
     await this.getActiveOrFail(userId);
     const user = await this.usersRepository.update(userId, { name: dto.name });
     return new UserEntity(user);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Auth-supporting methods (consumed by the auth module). These return raw
+  // records (including secrets/lockout state) that the public UserEntity omits.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /** Finds an active user (with roles) by email, or `null`. */
+  findAuthUserByEmail(email: string): Promise<UserWithRoles | null> {
+    return this.usersRepository.findActiveByEmailWithRoles(email);
+  }
+
+  /** Finds an active user (with roles) by id, or `null`. */
+  findAuthUserById(id: string): Promise<UserWithRoles | null> {
+    return this.usersRepository.findActiveByIdWithRoles(id);
+  }
+
+  /**
+   * Self-service registration: creates an unverified user with a hashed
+   * password and the default role. Throws 409 if the email is already active.
+   */
+  async registerLocalUser(input: {
+    email: string;
+    password: string;
+    name?: string;
+  }): Promise<UserWithRoles> {
+    const existing = await this.usersRepository.findActiveByEmail(input.email);
+    if (existing) {
+      throw new ConflictException('A user with this email already exists.');
+    }
+    const passwordHash = await this.hashingService.hash(input.password);
+    return this.usersRepository.createWithRole(
+      { email: input.email, passwordHash, name: input.name ?? null },
+      DEFAULT_USER_ROLE,
+    );
+  }
+
+  /** Clears lockout state and stamps the last-login time. */
+  async recordSuccessfulLogin(id: string): Promise<void> {
+    await this.usersRepository.recordSuccessfulLogin(id);
+  }
+
+  /**
+   * Records a failed login. Locks the account for `lockoutMinutes` once the
+   * failure count reaches `maxFailedLogins` (brute-force mitigation).
+   */
+  async registerFailedLogin(
+    id: string,
+    policy: { maxFailedLogins: number; lockoutMinutes: number },
+  ): Promise<void> {
+    const updated = await this.usersRepository.incrementFailedLoginCount(id);
+    if (updated.failedLoginCount >= policy.maxFailedLogins) {
+      const lockedUntil = new Date(Date.now() + policy.lockoutMinutes * 60_000);
+      await this.usersRepository.setLockout(id, lockedUntil);
+    }
+  }
+
+  /** Hashes and stores a new password (used by change/reset flows). */
+  async setPassword(id: string, newPassword: string): Promise<void> {
+    const passwordHash = await this.hashingService.hash(newPassword);
+    await this.usersRepository.updatePasswordHash(id, passwordHash);
+  }
+
+  /** Marks the user's email as verified (no-op-safe to call again). */
+  async markEmailVerified(id: string): Promise<void> {
+    await this.usersRepository.markEmailVerified(id, new Date());
   }
 
   /** Loads an active user or throws a 404. */

@@ -8,6 +8,7 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateIf,
   validateSync,
 } from 'class-validator';
 
@@ -22,6 +23,18 @@ export enum NodeEnvironment {
   Test = 'test',
   Staging = 'staging',
   Production = 'production',
+}
+
+/**
+ * How the refresh token is delivered to the client.
+ *  - `cookie`: Secure, HttpOnly cookie (web-first; CSRF-protected).
+ *  - `body`:   returned in the JSON response (API/mobile-first).
+ *  - `both`:   cookie + body (default; flexible for mixed clients).
+ */
+export enum RefreshTransport {
+  Cookie = 'cookie',
+  Body = 'body',
+  Both = 'both',
 }
 
 /**
@@ -121,26 +134,79 @@ export class EnvironmentVariables {
   @IsOptional()
   THROTTLER_LIMIT = 100;
 
-  // --- Auth (prepared for Phase 2; optional in Phase 1) ---
+  // --- Auth: JWT access token (RS256, asymmetric) ---
+  // Base64-encoded PEM keys (base64 keeps the multi-line PEM on one .env line).
+  // Required in production; in dev an ephemeral keypair is generated at boot.
   @Transform(emptyToUndefined)
+  @ValidateIf(
+    (o: EnvironmentVariables) => o.NODE_ENV === NodeEnvironment.Production,
+  )
   @IsString()
-  @IsOptional()
-  @MinLength(16)
-  JWT_ACCESS_SECRET?: string;
+  JWT_ACCESS_PRIVATE_KEY?: string;
+
+  @Transform(emptyToUndefined)
+  @ValidateIf(
+    (o: EnvironmentVariables) => o.NODE_ENV === NodeEnvironment.Production,
+  )
+  @IsString()
+  JWT_ACCESS_PUBLIC_KEY?: string;
 
   @IsString()
   @IsOptional()
   JWT_ACCESS_TTL = '15m';
 
-  @Transform(emptyToUndefined)
   @IsString()
   @IsOptional()
-  @MinLength(16)
-  JWT_REFRESH_SECRET?: string;
+  JWT_ISSUER = 'nestjs-foundation';
 
   @IsString()
   @IsOptional()
-  JWT_REFRESH_TTL = '7d';
+  JWT_AUDIENCE = 'nestjs-foundation';
+
+  // --- Auth: refresh token (opaque, hashed at rest) ---
+  @IsString()
+  @IsOptional()
+  REFRESH_TOKEN_TTL = '7d';
+
+  @IsEnum(RefreshTransport)
+  @IsOptional()
+  AUTH_REFRESH_TRANSPORT: RefreshTransport = RefreshTransport.Both;
+
+  @Transform(emptyToUndefined)
+  @IsString()
+  @IsOptional()
+  AUTH_COOKIE_DOMAIN?: string;
+
+  // --- Auth: account lockout (defense against brute force) ---
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  AUTH_MAX_FAILED_LOGINS = 5;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  AUTH_LOCKOUT_MINUTES = 15;
+
+  // --- Auth: single-use verification/reset token lifetimes (minutes) ---
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  EMAIL_VERIFICATION_TTL_MINUTES = 1440;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  PASSWORD_RESET_TTL_MINUTES = 60;
+
+  // Public base URL used to build verification/reset links in emails.
+  @IsString()
+  @IsOptional()
+  APP_PUBLIC_URL = 'http://localhost:3000';
 }
 
 /**

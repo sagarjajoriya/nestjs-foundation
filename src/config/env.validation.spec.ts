@@ -32,19 +32,36 @@ describe('validateEnv', () => {
     expect(result.SWAGGER_ENABLED).toBe(false);
   });
 
-  it('rejects a too-short JWT secret', () => {
+  it('applies auth defaults (RS256 keys optional in non-production)', () => {
+    const result = validateEnv(validBase);
+    expect(result.AUTH_MAX_FAILED_LOGINS).toBe(5);
+    expect(result.AUTH_LOCKOUT_MINUTES).toBe(15);
+    expect(result.REFRESH_TOKEN_TTL).toBe('7d');
+    expect(result.JWT_ACCESS_PRIVATE_KEY).toBeUndefined();
+  });
+
+  it('requires RS256 access keys in production', () => {
     expect(() =>
-      validateEnv({ ...validBase, JWT_ACCESS_SECRET: 'short' }),
+      validateEnv({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
+      }),
     ).toThrow(/Invalid environment configuration/);
   });
 
-  it('treats an empty JWT secret as unset (Phase 1)', () => {
+  it('accepts production when RS256 access keys are provided', () => {
     const result = validateEnv({
-      ...validBase,
-      JWT_ACCESS_SECRET: '',
-      JWT_REFRESH_SECRET: '   ',
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
+      JWT_ACCESS_PRIVATE_KEY: 'cHJpdmF0ZQ==',
+      JWT_ACCESS_PUBLIC_KEY: 'cHVibGlj',
     });
-    expect(result.JWT_ACCESS_SECRET).toBeUndefined();
-    expect(result.JWT_REFRESH_SECRET).toBeUndefined();
+    expect(result.NODE_ENV).toBe(NodeEnvironment.Production);
+  });
+
+  it('rejects an invalid refresh transport', () => {
+    expect(() =>
+      validateEnv({ ...validBase, AUTH_REFRESH_TRANSPORT: 'carrier-pigeon' }),
+    ).toThrow(/Invalid environment configuration/);
   });
 });
